@@ -22,22 +22,9 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     conda activate partypredictor && \
     conda install python=3.8 pip
 
-RUN mkdir -p /deploy/Data
-COPY requirements.txt deploy/requirements.txt
-RUN conda install -c conda-forge -c plotly -c pytorch -y --file deploy/requirements.txt
-
-RUN wget https://cernbox.cern.ch/index.php/s/dy9SqJs7Hs4NWjv/download -O /deploy/Data/vocab.pkl
-RUN wget https://cernbox.cern.ch/index.php/s/r8zx5JOqPsflfAg/download -O /deploy/Data/LSTMMultiClass_trained.pt
-
-COPY gunicorn_config.py deploy/gunicorn_config.py
-COPY app.py /deploy/app.py
-COPY LSTMmodel.py /deploy/LSTMmodel.py
-COPY utils.py /deploy/utils.py
-
-WORKDIR /deploy
-
-ENV PYTHONPATH=/deploy
+RUN mkdir -p /Data
+RUN conda install -c conda-forge -c plotly -c pytorch -y --file requirements.txt
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
+CMD ["gunicorn", "--config", "gunicorn_config.py", "app:server"]

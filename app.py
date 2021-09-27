@@ -34,10 +34,11 @@ def predictParty(text):
 
 
 vocab = pkl.load(
-    open('./Data/vocab.pkl', 'rb'))
+    open('/eos/home-h/hig19016review/BDPP_Project/Data/vocab.pkl', 'rb'))
 net = LSTMmodel.LSTMMultiClassWrapper(vocab_size=len(
     vocab)+1, output_size=7, embedding_dim=400, hidden_dim=1024, n_layers=2)
-net.loadModel('./Data/LSTMMultiClass_trained.pt')
+net.loadModel(
+    '/eos/home-h/hig19016review/BDPP_Project/Data/LSTMMultiClass_trained.pt')
 net.net = net.net.to(torch.device('cpu'))
 net.net.device = torch.device('cpu')
 
