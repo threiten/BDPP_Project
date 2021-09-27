@@ -23,7 +23,7 @@ export CUBLAS_WORKSPACE_CONFIG=:4096:2
 
 echo SLURM_ARRAY_TASK_ID : ${SLURM_ARRAY_TASK_ID}
 
-python3 /t3home/threiten/BDPP_Project/runTraining.py -c $CUDA_VISIBLE_DEVICES -i ${TMPDIR}/Corp_Bundestag_V2.zarr -s ${TMPDIR}/out/LSTMMultiClass_trained.pt -t ${TMPDIR} --config ${SLURM_ARRAY_TASK_ID}
+python3.8 /t3home/threiten/BDPP_Project/runTraining.py -c $CUDA_VISIBLE_DEVICES -i ${TMPDIR}/Corp_Bundestag_V2.zarr -s ${TMPDIR}/out/LSTMMultiClass_trained.pt -t ${TMPDIR} --config ${SLURM_ARRAY_TASK_ID}
 
 cp -r ${TMPDIR}/out /work/threiten/BDPP_Data/TrainedModels/outdir_${SLURM_JOB_ID}
 
