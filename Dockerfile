@@ -24,7 +24,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
 
 RUN mkdir -p /deploy/Data
 COPY requirements.txt deploy/requirements.txt
-RUN conda install -c conda-forge -y --file deploy/requirements.txt
+RUN conda install -c conda-forge -c plotly -c pytorch -y --file deploy/requirements.txt
 
 RUN wget https://cernbox.cern.ch/index.php/s/dy9SqJs7Hs4NWjv/download -O /deploy/Data/vocab.pkl
 RUN wget https://cernbox.cern.ch/index.php/s/r8zx5JOqPsflfAg/download -O /deploy/Data/LSTMMultiClass_trained.pt
