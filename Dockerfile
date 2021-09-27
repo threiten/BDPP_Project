@@ -37,6 +37,6 @@ EXPOSE 8080
 
 RUN echo 'conda activate partypredictor' >> /root/.bashrc
 
-ENTRYPOINT ["bin/bash", "-l", "-c"]
+ENTRYPOINT ["/bin/bash", "-l", "-c"]
 
 CMD ["gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
