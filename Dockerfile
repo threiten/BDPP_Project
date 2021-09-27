@@ -22,8 +22,16 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     conda activate partypredictor && \
     conda install python=3.8 pip
 
-RUN mkdir -p /Data
-RUN conda install -c conda-forge -c plotly -c pytorch -y --file requirements.txt
+RUN mkdir -p /deploy
+COPY requirements.txt deploy/requirements.txt
+RUN conda install -c conda-forge -c plotly -c pytorch -y --file /deploy/requirements.txt
+
+COPY app.py /deploy/app.py
+COPY LSTMmodel.py /deploy/LSTMmodel.py
+COPY utils.py /deploy/utils.py
+COPY gunicorn_config.py /deploy/gunicorn_config.py
+
+WORKDIR /deploy
 
 EXPOSE 8080
 
