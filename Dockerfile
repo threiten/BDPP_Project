@@ -20,7 +20,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     conda update conda && \
     conda create -n partypredictor && \
     conda activate partypredictor && \
-    conda install python=3.8 pip && \
+    conda install python=3.8 pip &&
 
 RUN mkdir -p /deploy/Data
 COPY requirements.txt deploy/requirements.txt
