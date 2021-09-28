@@ -77,13 +77,17 @@ app.layout = html.Div([
     html.Div(id='unrecWarn', style={'float': 'right', 'color': 'red'}),
     html.Button('Submit', id='submitButton', n_clicks=0),
     html.Div([
-        html.H4(id='predParty', style={'textAlign': 'center'})
-    ]),
-    html.Div([
         dcc.Loading(
             id='loading-probBars',
-            children=dcc.Graph(id='probBars'),
-            type='graph'
+            type='graph',
+            children=[
+                html.Div([
+                    html.H4(id='predParty', style={'textAlign': 'center'})
+                ]),
+                html.Div([
+                    dcc.Graph(id='probBars'),
+                ])
+            ]
         )
     ])
 ])
@@ -152,6 +156,10 @@ def selectRandSpeech(n_clicks_rs, text, party):
         text = inpDf.loc[inpDf['party'] == party,
                          'text'].sample(replace=True).values[0]
         text = text.split()[:500]
+        while len(text) < 250:
+            text = inpDf.loc[inpDf['party'] == party,
+                             'text'].sample(replace=True).values[0]
+            text = text.split()[:500]
         retStr = ''
         for stt in text:
             retStr += '{} '.format(stt)
