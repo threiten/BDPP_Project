@@ -59,15 +59,22 @@ app.layout = html.Div([
     html.Div(id='unrecWarn', style={'float': 'right', 'color': 'red'}),
     html.Button('Submit', id='submitButton', n_clicks=0),
     html.Div([
-        html.H4(id='predParty', style={'textAlign': 'center'})
+        dcc.Loading(
+            id='loading-predParty',
+            children=html.H4(id='predParty', style={'textAlign': 'center'})
+        )
     ]),
     html.Div([
-        dcc.Graph(id='probBars')
+        dcc.Loading(
+            id='loading-probBars',
+            children=dcc.Graph(id='probBars'),
+            type='graph'
+        )
     ])
 ])
 
 
-@app.callback(
+@ app.callback(
     Output('nWords', 'children'),
     Output('nWords', 'style'),
     Output('submitButton', 'disabled'),
@@ -89,7 +96,7 @@ def count_words(text, styleDic):
     return retStr, styleDic, btnDisable
 
 
-@app.callback(
+@ app.callback(
     Output('probBars', 'figure'),
     Output('predParty', 'children'),
     Output('unrecWarn', 'children'),

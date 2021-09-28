@@ -27,6 +27,9 @@ COPY LSTMmodel.py /deploy/LSTMmodel.py
 COPY utils.py /deploy/utils.py
 COPY gunicorn_config.py /deploy/gunicorn_config.py
 
+RUN mkdir -p /deploy/mplcache
+ENV MPLCONFIGDIR "/deploy/mplcache"
+
 WORKDIR /deploy
 
 EXPOSE 8080

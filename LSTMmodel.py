@@ -168,7 +168,7 @@ class LSTMMultiClassWrapper:
 
         return y_pred_tags
 
-    def loadModel(self, path, force=False):
+    def loadModel(self, path, force=False, use_state_dict=False):
 
         if self.model_trained and not force:
             raise AttributeError(
@@ -176,10 +176,16 @@ class LSTMMultiClassWrapper:
         elif self.model_loaded and not force:
             raise AttributeError(
                 "Model already loaded, set force to True to overwrite.")
+        elif use_state_dict:
+            self.net.load_state_dict(torch.load(
+                path, map_location=self.device))
+            self.model_loaded = True
         else:
             self.net = torch.load(path, map_location=self.device)
             self.model_loaded = True
 
-    def save(self, path):
-
-        torch.save(self.net, path)
+    def save(self, path, use_state_dict=False):
+        if use_state_dict:
+            torch.save(self.net.state_dict(), path)
+        else:
+            torch.save(self.net, path)
