@@ -7,7 +7,7 @@ RUN apt-get update && apt-get -y upgrade \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-ENV PATH /root/miniconda3/bin:${PATH}
+ENV PATH "/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
 
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
@@ -33,11 +33,10 @@ WORKDIR /deploy
 
 EXPOSE 8080
 
-RUN echo 'echo $PATH\n\
-	  echo "Hello World!"' >> /root/.bashrc
+RUN echo 'export PATH="/root/miniconda3/bin:${PATH}"' >> /root/.bashrc
 
 RUN echo $PATH
 
 ENTRYPOINT ["/bin/bash", "-l", "-c"]
 
-CMD ["echo $PATH; which gunicorn"]
+CMD ["echo $PATH"]
