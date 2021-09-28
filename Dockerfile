@@ -33,7 +33,7 @@ WORKDIR /deploy
 
 EXPOSE 8080
 
-RUN echo 'export PATH="/root/miniconda3/bin:${PATH}"' >> /root/.bashrc
+RUN echo 'echo $PATH' >> /root/.bashrc
 
 RUN echo $PATH
 
