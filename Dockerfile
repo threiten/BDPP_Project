@@ -8,7 +8,7 @@ RUN apt-get update && apt-get -y upgrade \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PATH /root/miniconda3/bin:${PATH}
-ARG PATH /root/miniconda3/bin:${PATH}
+ARG PATH="/root/miniconda3/bin:${PATH}"
 
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
