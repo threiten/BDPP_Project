@@ -36,7 +36,9 @@ WORKDIR /deploy
 EXPOSE 8080
 
 RUN echo 'conda activate partypredictor \n' >> /root/.bashrc
+RUN cat /root/.bashrc
+RUN echo $PATH
 
 ENTRYPOINT ["/bin/bash", "-l", "-c"]
 
-CMD ["/root/conda-envs/partypredictor/bin/gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
+CMD ["/root/.conda/partypredictor/bin/gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
