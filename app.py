@@ -34,6 +34,12 @@ def predictParty(text):
     return clsPred, clsProbs, nUnrec
 
 
+zarr_dir = zarr.load(
+    '/eos/user/h/hig19016review/BDPP_Project/Data/Corp_Bundestag_V2.zarr')
+inpDf = pd.DataFrame({'text': zarr_dir['text'], 'party': zarr_dir['party']})
+del zarr_dir
+
+
 vocab = pkl.load(
     open('/eos/user/h/hig19016review/BDPP_Project/Data/vocab.pkl', 'rb'))
 net = LSTMmodel.LSTMMultiClassWrapper(vocab_size=len(
@@ -49,6 +55,18 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 app.layout = html.Div([
+    html.Div([
+        html.Label('Select party'),
+        dcc.Dropdown(
+            id='partyDropdown',
+            options=[{'label': key, 'value': key}
+                     for key in party_dict.keys()],
+            value='SPD',
+            style={'width': '50%'}
+        ),
+        html.Button('Use random speech', id='randSpeechButton',
+                    n_clicks=0, className='input-group-addon')
+    ], className='input-group'),
     html.Label('Text Input'),
     dcc.Textarea(
         value='Your text here ...',
@@ -59,10 +77,7 @@ app.layout = html.Div([
     html.Div(id='unrecWarn', style={'float': 'right', 'color': 'red'}),
     html.Button('Submit', id='submitButton', n_clicks=0),
     html.Div([
-        dcc.Loading(
-            id='loading-predParty',
-            children=html.H4(id='predParty', style={'textAlign': 'center'})
-        )
+        html.H4(id='predParty', style={'textAlign': 'center'})
     ]),
     html.Div([
         dcc.Loading(
@@ -74,7 +89,7 @@ app.layout = html.Div([
 ])
 
 
-@ app.callback(
+@app.callback(
     Output('nWords', 'children'),
     Output('nWords', 'style'),
     Output('submitButton', 'disabled'),
@@ -96,7 +111,7 @@ def count_words(text, styleDic):
     return retStr, styleDic, btnDisable
 
 
-@ app.callback(
+@app.callback(
     Output('probBars', 'figure'),
     Output('predParty', 'children'),
     Output('unrecWarn', 'children'),
@@ -123,6 +138,26 @@ def update_figure(n_clicks, text):
     layout = {'title': 'Probability per Party'}
 
     return {'data': [bars], 'layout': layout}, prtStr, unrecStr
+
+
+@app.callback(
+    Output('textField', 'value'),
+    Input('randSpeechButton', 'n_clicks'),
+    State('textField', 'value'),
+    State('partyDropdown', 'value')
+)
+def selectRandSpeech(n_clicks_rs, text, party):
+    retStr = text
+    if n_clicks_rs > 0:
+        text = inpDf.loc[inpDf['party'] == party,
+                         'text'].sample(replace=True).values[0]
+        text = text.split()[:500]
+        retStr = ''
+        for stt in text:
+            retStr += '{} '.format(stt)
+        retStr = retStr[:-1]
+
+    return retStr
 
 
 if __name__ == "__main__":
