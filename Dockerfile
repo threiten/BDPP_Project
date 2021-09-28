@@ -40,4 +40,4 @@ RUN echo $PATH
 
 ENTRYPOINT ["/bin/bash", "-l", "-c"]
 
-CMD ["gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
+CMD ["gunicorn --config /deploy/gunicorn_config.py app:server"]
