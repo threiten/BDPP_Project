@@ -34,7 +34,7 @@ WORKDIR /deploy
 EXPOSE 8080
 
 RUN echo 'echo $PATH\n\
-	  echo 'Hello World!' >> /root/.bashrc
+	  echo "Hello World!"' >> /root/.bashrc
 
 RUN echo $PATH
 
