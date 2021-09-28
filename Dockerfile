@@ -33,10 +33,4 @@ WORKDIR /deploy
 
 EXPOSE 8080
 
-RUN echo 'echo $PATH' >> /root/.bashrc
-
-RUN echo $PATH
-
-ENTRYPOINT ["/bin/bash", "-l", "-c"]
-
-CMD ["echo $PATH"]
+CMD ["gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
