@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 party_dict = {
@@ -9,6 +10,7 @@ party_dict = {
     'AfD': 4,
     'PDS/LINKE': 5,
     'independent': 6,
+    '': 6
 }
 
 

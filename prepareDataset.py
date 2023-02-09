@@ -2,6 +2,7 @@ import datasets
 import zarr
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from utils import remove_comments
 import argparse
 
 def clean_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -13,6 +14,10 @@ def clean_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     del dataframe['index']
 
     return dataframe
+
+def remove_comments_dataset(examples):
+    examples['text'] = [remove_comments(ent, ['(', ')']) for ent in examples['text']]
+    return examples
 
 def main(options):
 
@@ -35,6 +40,7 @@ def main(options):
     dsDict['test'] = testDs
     dsDict['validation'] = valDs
 
+    dsDict = dsDict.map(remove_comments_dataset, batched=True)
     dsDict.push_to_hub(f"{options.repoName}", token=options.hfToken)
 
 if __name__ == "__main__":
