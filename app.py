@@ -4,50 +4,44 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import pandas as pd
 import numpy as np
-import plotly.express as px
 
-import LSTMmodel
+import transformers
+import datasets
 import torch
-import pickle as pkl
-from string import punctuation
-from utils import pad_text, remove_comments, party_dict, cut_text
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import zarr
-from torch.utils.data import DataLoader, TensorDataset
-from collections import Counter
+from utils import party_dict
 
 
-def predictParty(text):
-    predTxt = text.lower()
-    predTxt = ''.join([c for c in predTxt if c not in punctuation])
-    predArr = predTxt.split()
-    predIntsRaw = []
-    predIntsRaw.append(
-        [vocab[wrd] if wrd in vocab.keys() else 0 for wrd in predArr])
-    predInts = pad_text(predIntsRaw, 500)
-    predIntsTns = torch.from_numpy(predInts)
-    clsPred = net.predict(predIntsTns)
-    clsProbs = net.predict(predIntsTns, True)
-    nUnrec = Counter(predIntsRaw[0])[0]
+party_dict['unknown'] = 6
+del party_dict['independent']
+del party_dict['']
 
-    return clsPred, clsProbs, nUnrec
+def predictParty(text, pipeline):
+    inp = pipeline.tokenizer(text, return_tensors='pt')
+    logits = pipeline.model(**input)['logits']
+    softm = torch.log_softmax(logits, dim=1)
+    party = list(party_dict.keys())[torch.max(softm)[1].detach().numpy().flatten()[0]]
+    probs = torch.exp(softm).detach().numpy().flatten()
 
+    return party, probs
 
-zarr_dir = zarr.load(
-    '/eos/user/h/hig19016review/BDPP_Project/Data/Corp_Bundestag_V2.zarr')
-inpDf = pd.DataFrame({'text': zarr_dir['text'], 'party': zarr_dir['party']})
-del zarr_dir
+# zarr_dir = zarr.load(
+#     '/eos/user/h/hig19016review/BDPP_Project/Data/Corp_Bundestag_V2.zarr')
+# inpDf = pd.DataFrame({'text': zarr_dir['text'], 'party': zarr_dir['party']})
+# del zarr_dir
 
 
-vocab = pkl.load(
-    open('/eos/user/h/hig19016review/BDPP_Project/Data/vocab.pkl', 'rb'))
-net = LSTMmodel.LSTMMultiClassWrapper(vocab_size=len(
-    vocab)+1, output_size=7, embedding_dim=400, hidden_dim=1024, n_layers=2)
-net.loadModel(
-    '/eos/user/h/hig19016review/BDPP_Project/Data/LSTMMultiClass_trained.pt')
-net.net = net.net.to(torch.device('cpu'))
-net.net.device = torch.device('cpu')
+# vocab = pkl.load(
+#     open('/eos/user/h/hig19016review/BDPP_Project/Data/vocab.pkl', 'rb'))
+# net = LSTMmodel.LSTMMultiClassWrapper(vocab_size=len(
+#     vocab)+1, output_size=7, embedding_dim=400, hidden_dim=1024, n_layers=2)
+# net.loadModel(
+#     '/eos/user/h/hig19016review/BDPP_Project/Data/LSTMMultiClass_trained.pt')
+# net.net = net.net.to(torch.device('cpu'))
+# net.net.device = torch.device('cpu')
+
+test_dataset = datasets.load_dataset('threite/Bundestag-v2', split='test')
+inpDf = test_dataset.to_pandas()
+pipeline = transformers.pipeline(model='threite/xlm-roberta-base-finetuned-partypredictor-test')
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -102,13 +96,13 @@ app.layout = html.Div([
 )
 def count_words(text, styleDic):
     nWds = len(text.split())
-    if nWds > 500:
-        retStr = u'Too many words: {}. Needs to be 500 or less'.format(
+    if nWds > 512:
+        retStr = u'Too many words: {}. Needs to be 512 or less'.format(
             nWds)
         styleDic['color'] = 'red'
         btnDisable = True
     else:
-        retStr = u'{}/500'.format(nWds)
+        retStr = u'{}/512'.format(nWds)
         styleDic['color'] = 'black'
         btnDisable = False
 
@@ -122,17 +116,16 @@ def count_words(text, styleDic):
     Input('submitButton', 'n_clicks'),
     State('textField', 'value')
 )
-def update_figure(n_clicks, text):
+def update_figure(n_clicks, text, pipeline=pipeline):
     unrecStr = ''
     if n_clicks > 0:
-        prt, probs, nUnrec = predictParty(text)
-        if nUnrec > 0:
-            unrecStr = u'There are {} unrecognized words in your text. The prediction might not be very accurate.'.format(
-                nUnrec)
+        party, probs = predictParty(text, pipeline)
+        # if nUnrec > 0:
+        #     unrecStr = u'There are {} unrecognized words in your text. The prediction might not be very accurate.'.format(
+        #         nUnrec)
         df = pd.DataFrame(
-            {'party': list(party_dict.keys()), 'probs': probs.detach().numpy().flatten()})
-        prtStr = 'Your text is most similar to speeches of a {} member'.format(
-            list(party_dict.keys())[prt.detach().numpy().flatten()[0]])
+            {'party': list(party_dict.keys()), 'probs': probs})
+        prtStr = 'Your text is most similar to speeches of a {} member'.format(party)
     else:
         df = pd.DataFrame({'party': list(party_dict.keys()),
                            'probs': np.zeros(len(list(party_dict.keys())))})
@@ -155,11 +148,11 @@ def selectRandSpeech(n_clicks_rs, text, party):
     if n_clicks_rs > 0:
         text = inpDf.loc[inpDf['party'] == party,
                          'text'].sample(replace=True).values[0]
-        text = text.split()[:500]
+        text = text.split()[:512]
         while len(text) < 250:
             text = inpDf.loc[inpDf['party'] == party,
                              'text'].sample(replace=True).values[0]
-            text = text.split()[:500]
+            text = text.split()[:512]
         retStr = ''
         for stt in text:
             retStr += '{} '.format(stt)

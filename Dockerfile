@@ -1,4 +1,4 @@
-FROM python:slim
+FROM python:3.9-slim
 RUN apt-get update && apt-get -y upgrade \
   && apt-get install -y --no-install-recommends \
   git \
@@ -10,17 +10,19 @@ RUN apt-get update && apt-get -y upgrade \
 ENV PATH "/usr/miniconda3/bin:${PATH}"
 ARG PATH="/usr/miniconda3/bin:${PATH}"
 
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py39_22.11.1-1-Linux-x86_64.sh \
     && mkdir /usr/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/miniconda3 \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-py39_22.11.1-1-Linux-x86_64.sh -b -p /usr/miniconda3 \
+    && rm -f Miniconda3-py39_22.11.1-1-Linux-x86_64.sh \
     && echo "Running $(conda --version)" && \
     conda update conda && \
-    conda install python=3.8 pip
+    conda install python=3.9 pip
 
 RUN mkdir -p /deploy
 COPY requirements.txt deploy/requirements.txt
-RUN conda install -c conda-forge -c plotly -c pytorch -y --file /deploy/requirements.txt
+RUN conda install -k -S -c conda-forge -c plotly -c pytorch -c huggingface -y --file /deploy/requirements.txt
+
+RUN which gunicorn
 
 COPY app.py /deploy/app.py
 COPY LSTMmodel.py /deploy/LSTMmodel.py
@@ -33,5 +35,6 @@ ENV MPLCONFIGDIR "/deploy/mplcache"
 WORKDIR /deploy
 
 EXPOSE 8080
+EXPOSE 8265
 
-CMD ["gunicorn", "--config", "/deploy/gunicorn_config.py", "app:server"]
+CMD ["gunicorn", "--timeout", "1000", "--config", "/deploy/gunicorn_config.py", "app:server"]
