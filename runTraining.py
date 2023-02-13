@@ -40,6 +40,14 @@ def main(options: argparse.Namespace):
     del label2id['independent']
     del label2id['']
 
+    train_dataset_by_label = [tokenized_datasets['train'].filter(lambda x: x['labels']==lab) for lab in id2label.keys()]
+    probs = [.96/(len(id2label.keys())-2.)] * int(len(id2label.keys()))
+    probs[4] = 0.02
+    probs[6] = 0.02
+    print(probs)
+    tokenized_datasets['train'] = datasets.interleave_datasets(train_dataset_by_label, probabilities=probs)
+    print(tokenized_datasets)
+
     model = transformers.AutoModelForSequenceClassification.from_pretrained('xlm-roberta-base', label2id=label2id, id2label=id2label)
     data_collator = transformers.DataCollatorWithPadding(tokenizer=tokenizer, padding=True)
     
@@ -49,14 +57,15 @@ def main(options: argparse.Namespace):
     training_args = transformers.TrainingArguments(
         options.modelName,
         evaluation_strategy='steps',
-        save_strategy='epoch',
+        save_strategy='steps',
         learning_rate=2e-5,
-        num_train_epochs=4,
+        num_train_epochs=16,
         weight_decay=0.01,
         use_mps_device=use_mps,
         push_to_hub=push_to_hub,
         hub_token=options.hfToken,
-        eval_steps=5000
+        eval_steps=5000,
+        save_steps=5000
     )
 
     trainer = transformers.Trainer(
@@ -68,8 +77,9 @@ def main(options: argparse.Namespace):
         eval_dataset=tokenized_datasets['validation'],
         compute_metrics=compute_metrics
     )
-
-    trainer.train()
+    
+    print('Resume Training:', options.resumeTraining)
+    trainer.train(resume_from_checkpoint=options.resumeTraining)
     trainer.push_to_hub()
 
 if __name__ == '__main__':
@@ -77,5 +87,6 @@ if __name__ == '__main__':
     args = parser.add_argument_group()
     args.add_argument('--modelName', '-n', action='store', type=str, help='Name of the model used when pushed to the huggingface hub')
     args.add_argument('--hfToken', '-t', action='store', type=str, help='Acces Token for the huggingface hub')
+    args.add_argument('--resumeTraining', '-r', action='store_true', default=False, help='Use this flag to resume training from a saved checkpoint.')
     options = parser.parse_args()
     main(options)

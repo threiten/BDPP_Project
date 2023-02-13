@@ -4,6 +4,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import pandas as pd
 import numpy as np
+import os
 
 import transformers
 import datasets
@@ -16,32 +17,23 @@ del party_dict['independent']
 del party_dict['']
 
 def predictParty(text, pipeline):
-    inp = pipeline.tokenizer(text, return_tensors='pt')
-    logits = pipeline.model(**input)['logits']
+    inp = pipeline.tokenizer(text, return_tensors='pt', truncation=True)
+    logits = pipeline.model(**inp)['logits']
     softm = torch.log_softmax(logits, dim=1)
-    party = list(party_dict.keys())[torch.max(softm)[1].detach().numpy().flatten()[0]]
+    party = list(party_dict.keys())[torch.max(softm, dim=1).indices.detach().numpy()[0]]
     probs = torch.exp(softm).detach().numpy().flatten()
 
     return party, probs
 
-# zarr_dir = zarr.load(
-#     '/eos/user/h/hig19016review/BDPP_Project/Data/Corp_Bundestag_V2.zarr')
-# inpDf = pd.DataFrame({'text': zarr_dir['text'], 'party': zarr_dir['party']})
-# del zarr_dir
-
-
-# vocab = pkl.load(
-#     open('/eos/user/h/hig19016review/BDPP_Project/Data/vocab.pkl', 'rb'))
-# net = LSTMmodel.LSTMMultiClassWrapper(vocab_size=len(
-#     vocab)+1, output_size=7, embedding_dim=400, hidden_dim=1024, n_layers=2)
-# net.loadModel(
-#     '/eos/user/h/hig19016review/BDPP_Project/Data/LSTMMultiClass_trained.pt')
-# net.net = net.net.to(torch.device('cpu'))
-# net.net.device = torch.device('cpu')
-
-test_dataset = datasets.load_dataset('threite/Bundestag-v2', split='test')
+if os.path.exists('./Bundestag-v2'):
+    test_dataset = datasets.load_dataset('./Bundestag-v2', split='test', ignore_verifications=True)
+else:
+    test_dataset = datasets.load_dataset('threite/Bundestag-v2', split='test')
 inpDf = test_dataset.to_pandas()
-pipeline = transformers.pipeline(model='threite/xlm-roberta-base-finetuned-partypredictor-test')
+if os.path.exists('./xlm-roberta-base-finetuned-partypredictor-test'):
+    pipeline = transformers.pipeline('text-classification', model='./xlm-roberta-base-finetuned-partypredictor-test', tokenizer='./xlm-roberta-base-finetuned-partypredictor-test', local_files_only=True)
+else:
+    pipeline = transformers.pipeline(model='threite/xlm-roberta-base-finetuned-partypredictor-test')
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -96,13 +88,13 @@ app.layout = html.Div([
 )
 def count_words(text, styleDic):
     nWds = len(text.split())
-    if nWds > 512:
-        retStr = u'Too many words: {}. Needs to be 512 or less'.format(
+    if nWds > 364:
+        retStr = u'Too many words: {}. Needs to be 364 or less'.format(
             nWds)
         styleDic['color'] = 'red'
         btnDisable = True
     else:
-        retStr = u'{}/512'.format(nWds)
+        retStr = u'{}/364'.format(nWds)
         styleDic['color'] = 'black'
         btnDisable = False
 
@@ -148,11 +140,11 @@ def selectRandSpeech(n_clicks_rs, text, party):
     if n_clicks_rs > 0:
         text = inpDf.loc[inpDf['party'] == party,
                          'text'].sample(replace=True).values[0]
-        text = text.split()[:512]
+        text = text.split()[:364]
         while len(text) < 250:
             text = inpDf.loc[inpDf['party'] == party,
                              'text'].sample(replace=True).values[0]
-            text = text.split()[:512]
+            text = text.split()[:364]
         retStr = ''
         for stt in text:
             retStr += '{} '.format(stt)
