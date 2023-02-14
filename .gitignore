@@ -1,0 +1,6 @@
+*.zarr
+*.pkl
+.vscode/
+__pycache__/
+*.pyc
+*.ipynb
